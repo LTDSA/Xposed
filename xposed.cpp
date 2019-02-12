@@ -1,5 +1,5 @@
 /**
- * This file includes functions called directly from app_main.cpp during startup.
+ * 此文件包含在启动期间直接从 app_main.cpp 调用的函数。
  */
 
 #define LOG_TAG "Xposed"
@@ -30,7 +30,7 @@
 namespace xposed {
 
 ////////////////////////////////////////////////////////////
-// Variables
+// 变量
 ////////////////////////////////////////////////////////////
 
 XposedShared* xposed = new XposedShared;
@@ -42,30 +42,30 @@ const char* xposedVersion = "unknown (invalid " XPOSED_PROP_FILE ")";
 uint32_t xposedVersionInt = 0;
 
 ////////////////////////////////////////////////////////////
-// Functions
+// 函数
 ////////////////////////////////////////////////////////////
 
-/** Handle special command line options. */
+/** 处理特殊命令行选项。 */
 bool handleOptions(int argc, char* const argv[]) {
     parseXposedProp();
 
     if (argc == 2 && strcmp(argv[1], "--xposedversion") == 0) {
-        printf("Xposed version: %s\n", xposedVersion);
+        printf("Xposed 版本：%s\n", xposedVersion);
         return true;
     }
 
     if (argc == 2 && strcmp(argv[1], "--xposedtestsafemode") == 0) {
-        printf("Testing Xposed safemode trigger\n");
+        printf("正在测试 Xposed 安全模式触发器\n");
 
         if (detectSafemodeTrigger(shouldSkipSafemodeDelay())) {
-            printf("Safemode triggered\n");
+            printf("安全模式已触发\n");
         } else {
-            printf("Safemode not triggered\n");
+            printf("安全模式未触发\n");
         }
         return true;
     }
 
-    // From Lollipop coding, used to override the process name
+    // 从 Lollipop 编码，用于覆盖进程名称
     argBlockStart = argv[0];
     uintptr_t start = reinterpret_cast<uintptr_t>(argv[0]);
     uintptr_t end = reinterpret_cast<uintptr_t>(argv[argc - 1]);
@@ -75,7 +75,7 @@ bool handleOptions(int argc, char* const argv[]) {
     return false;
 }
 
-/** Initialize Xposed (unless it is disabled). */
+/** 初始化 Xposed（除非它被禁用）。 */
 bool initialize(bool zygote, bool startSystemServer, const char* className, int argc, char* const argv[]) {
 #if !defined(XPOSED_ENABLE_FOR_TOOLS)
     if (!zygote)
@@ -83,7 +83,7 @@ bool initialize(bool zygote, bool startSystemServer, const char* className, int 
 #endif
 
     if (isMinimalFramework()) {
-        ALOGI("Not loading Xposed for minimal framework (encrypted device)");
+        ALOGI("不加载最小框架的 Xposed（加密设备）");
         return false;
     }
 
@@ -125,13 +125,13 @@ bool initialize(bool zygote, bool startSystemServer, const char* className, int 
     }
 
 #if XPOSED_WITH_SELINUX
-    // Don't let any further forks access the Zygote service
+    // 不要让任何进一步的叉子访问 Zygote 服务
     if (xposed->isSELinuxEnabled) {
         xposed::service::membased::restrictMemoryInheritance();
     }
 #endif  // XPOSED_WITH_SELINUX
 
-    // FIXME Zygote has no access to input devices, this would need to be check in system_server context
+    // FIXME Zygote 无法访问输入设备，这需要在 system_server 上下文中检查
     if (zygote && !isSafemodeDisabled() && detectSafemodeTrigger(shouldSkipSafemodeDelay()))
         disableXposed();
 
@@ -141,7 +141,7 @@ bool initialize(bool zygote, bool startSystemServer, const char* className, int 
     return addJarToClasspath();
 }
 
-/** Print information about the used ROM into the log */
+/** 将有关使用过的 ROM 的信息打印到日志中 */
 void printRomInfo() {
     char release[PROPERTY_VALUE_MAX];
     char sdk[PROPERTY_VALUE_MAX];
@@ -165,55 +165,55 @@ void printRomInfo() {
     property_get("ro.product.cpu.abi", platform, "n/a");
 
     ALOGI("-----------------");
-    ALOGI("Starting Xposed version %s, compiled for SDK %d", xposedVersion, PLATFORM_SDK_VERSION);
-    ALOGI("Device: %s (%s), Android version %s (SDK %s)", model, manufacturer, release, sdk);
-    ALOGI("ROM: %s", rom);
-    ALOGI("Build fingerprint: %s", fingerprint);
-    ALOGI("Platform: %s, %d-bit binary, system server: %s", platform, bit, xposed->startSystemServer ? "yes" : "no");
+    ALOGI("正在启动 Xposed 版本 %s，为 SDK %d 编译", xposedVersion, PLATFORM_SDK_VERSION);
+    ALOGI("设备：%s（%s），Android 版本 %s（SDK %s）", model, manufacturer, release, sdk);
+    ALOGI("ROM：%s", rom);
+    ALOGI("编译指纹：%s", fingerprint);
+    ALOGI("平台：%s，%d位二进制，系统服务器：%s", platform, bit, xposed->startSystemServer ? "yes" : "no");
     if (!xposed->zygote) {
-        ALOGI("Class name: %s", xposed->startClassName);
+        ALOGI("类名称：%s", xposed->startClassName);
     }
-    ALOGI("SELinux enabled: %s, enforcing: %s",
+    ALOGI("SELinux 已启用：%s，强制执行：%s",
             xposed->isSELinuxEnabled ? "yes" : "no",
             xposed->isSELinuxEnforcing ? "yes" : "no");
 }
 
-/** Parses /system/xposed.prop and stores selected values in variables */
+/** 暂停 /system/xposed.prop 并将所选值存储在变量中 */
 void parseXposedProp() {
     FILE *fp = fopen(XPOSED_PROP_FILE, "r");
     if (fp == NULL) {
-        ALOGE("Could not read %s: %s", XPOSED_PROP_FILE, strerror(errno));
+        ALOGE("无法读取 %s：%s", XPOSED_PROP_FILE, strerror(errno));
         return;
     }
 
     char buf[512];
     while (fgets(buf, sizeof(buf), fp) != NULL) {
         char* key = buf;
-        // Ignore leading spaces for the key
+        // 忽略密钥的前导空格
         while (isspace(*key)) key++;
 
-        // Skip comments
+        // 跳过评论
         if (*key == '#')
             continue;
 
-        // Find the key/value separator
+        // 找到键/值分隔符
         char* value = strchr(buf, '=');
         if (value == NULL)
             continue;
 
-        // Ignore trailing spaces for the key
+        // 忽略密钥的尾随空格
         char* tmp = value;
         do { *tmp = 0; tmp--; } while (isspace(*tmp));
 
-        // Ignore leading spaces for the value
+        // 忽略值的前导空格
         do { value++; } while (isspace(*value));
 
-        // Remove trailing newline
+        // 删除尾随换行符
         tmp = strpbrk(value, "\n\r");
         if (tmp != NULL)
             *tmp = 0;
 
-        // Handle this entry
+        // 处理此条目
         if (!strcmp("version", key)) {
             int len = strlen(value);
             if (len == 0)
@@ -229,7 +229,7 @@ void parseXposedProp() {
     return;
 }
 
-/** Returns the SDK version of the system */
+/** 返回系统的 SDK 版本 */
 int getSdkVersion() {
     if (sdkVersion < 0) {
         char sdkString[PROPERTY_VALUE_MAX];
@@ -340,10 +340,10 @@ bool addJarToClasspath() {
         if (!addPathToEnv("CLASSPATH", XPOSED_JAR))
             return false;
 
-        ALOGI("Added Xposed (%s) to CLASSPATH", XPOSED_JAR);
+        ALOGI("已添加 Xposed（%s）来 CLASSPATH", XPOSED_JAR);
         return true;
     } else {
-        ALOGE("ERROR: Could not access Xposed jar '%s'", XPOSED_JAR);
+        ALOGE("错误：无法访问 Xposed jar “%s”", XPOSED_JAR);
         return false;
     }
 }
@@ -352,7 +352,7 @@ bool addJarToClasspath() {
 static bool determineRuntime(const char** xposedLibPath) {
     FILE *fp = fopen("/proc/self/maps", "r");
     if (fp == NULL) {
-        ALOGE("Could not open /proc/self/maps: %s", strerror(errno));
+        ALOGE("无法打开 /proc/self/maps：%s", strerror(errno));
         return false;
     }
 
